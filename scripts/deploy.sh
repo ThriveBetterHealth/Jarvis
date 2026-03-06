@@ -8,7 +8,6 @@
 set -euo pipefail
 
 APP_DIR="${APP_DIR:-/opt/jarvis}"
-COMPOSE_FILE="$APP_DIR/docker-compose.yml"
 
 # ── Colours ──────────────────────────────────────────────────────────────────
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'
@@ -61,30 +60,54 @@ fi
 info "Starting postgres and redis..."
 docker compose up -d postgres redis
 
-info "Waiting for postgres to be healthy..."
-timeout 60 bash -c 'until docker compose exec -T postgres pg_isready -U "${POSTGRES_USER:-jarvis}" >/dev/null 2>&1; do sleep 2; done'
+# ── Wait for postgres using Docker's own healthcheck status ──────────────────
+info "Waiting for postgres to be healthy (up to 120s)..."
+WAIT=0
+until [ "$(docker inspect --format='{{.State.Health.Status}}' jarvis_postgres 2>/dev/null)" = "healthy" ]; do
+    if [ "$WAIT" -ge 120 ]; then
+        error "Postgres did not become healthy within 120s. Check: docker logs jarvis_postgres"
+    fi
+    sleep 3
+    WAIT=$((WAIT + 3))
+    info "  ...still waiting (${WAIT}s)"
+done
 info "PostgreSQL ready."
 
 # ── Run migrations ────────────────────────────────────────────────────────────
 info "Running database migrations..."
-docker compose run --rm backend alembic upgrade head
+docker compose run --rm \
+    --no-deps \
+    -e DATABASE_URL \
+    backend \
+    alembic upgrade head
 info "Migrations applied."
 
 # ── Rolling restart of application services ───────────────────────────────────
 info "Starting/restarting backend..."
 docker compose up -d --no-deps --force-recreate backend
-sleep 8
+
+info "Waiting for backend to be healthy (up to 90s)..."
+WAIT=0
+until [ "$(docker inspect --format='{{.State.Health.Status}}' jarvis_backend 2>/dev/null)" = "healthy" ]; do
+    if [ "$WAIT" -ge 90 ]; then
+        warn "Backend health check timed out. Continuing anyway — check: docker compose logs backend"
+        break
+    fi
+    sleep 5
+    WAIT=$((WAIT + 5))
+    info "  ...still waiting (${WAIT}s)"
+done
 
 info "Starting/restarting worker..."
 docker compose up -d --no-deps --force-recreate worker
 
 info "Starting/restarting frontend..."
 docker compose up -d --no-deps --force-recreate frontend
-sleep 5
 
 # ── Nginx ─────────────────────────────────────────────────────────────────────
 info "Starting/reloading nginx..."
 docker compose up -d --no-deps nginx
+sleep 3
 docker compose exec -T nginx nginx -s reload 2>/dev/null || true
 
 # ── Health check ──────────────────────────────────────────────────────────────
