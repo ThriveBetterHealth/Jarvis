@@ -1,8 +1,11 @@
 import type { Config } from "tailwindcss";
 
-// Helper that lets Tailwind generate opacity-modifier variants (e.g. bg-electric-blue/20)
-// by exposing the colour as an RGB channel string via a CSS variable.
-function withOpacity(variableName: string) {
+// Tailwind v3 runtime supports a function as a colour value to enable opacity
+// modifiers (bg-electric-blue/20 etc.), but the TypeScript types restrict colours
+// to strings only. We cast through `any` so the runtime behaviour is preserved
+// while satisfying the type-checker.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function withOpacity(variableName: string): any {
   return ({ opacityValue }: { opacityValue?: string | number }) => {
     if (opacityValue !== undefined) {
       return `rgba(var(${variableName}), ${opacityValue})`;
@@ -20,8 +23,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Jarvis brand palette
-        // Static shades (no opacity modifier needed — used for bg/text solid colours)
+        // Jarvis brand palette — static shades (solid use only, no /opacity modifier needed)
         navy: {
           DEFAULT: "#0A1628",
           50: "#E8EBF0",
@@ -35,13 +37,14 @@ const config: Config = {
           800: "#040910",
           900: "#020408",
         },
-        // Dynamic colours — defined via CSS RGB variables so /20, /50 etc. work
+        // Dynamic colours — CSS-variable RGB channel trick so /20, /50 etc. work at runtime.
+        // The `any` return type on withOpacity() bypasses the Tailwind TS type restriction.
         "electric-blue": withOpacity("--color-electric-blue-rgb"),
         "cyan-accent": withOpacity("--color-cyan-accent-rgb"),
         "neon-cyan": withOpacity("--color-neon-cyan-rgb"),
         "slate-body": "#2D3748",
         "light-grey": "#E2E8F0",
-        // Keep blue/cyan namespace aliases for convenience
+        // Namespace aliases (blue.electric, cyan.accent) for backwards compat
         blue: {
           electric: withOpacity("--color-electric-blue-rgb"),
           DEFAULT: "#1A73E8",
