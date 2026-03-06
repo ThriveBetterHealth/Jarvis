@@ -1,7 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Sora, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import { Toaster } from "react-hot-toast";
 
 const sora = Sora({
@@ -27,7 +28,22 @@ export const metadata: Metadata = {
   description: "Your Personal AI Operating System",
   icons: {
     icon: "/favicon.ico",
+    apple: "/favicon.ico",
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Jarvis AI",
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+  themeColor: "#0A1628",
 };
 
 export default function RootLayout({
@@ -39,17 +55,19 @@ export default function RootLayout({
     <html lang="en" className={`${sora.variable} ${inter.variable} ${jetbrainsMono.variable}`}>
       <body className="bg-navy text-white font-inter antialiased">
         <Providers>
-          {children}
-          <Toaster
-            position="bottom-right"
-            toastOptions={{
-              style: {
-                background: "#1A2942",
-                color: "#fff",
-                border: "1px solid #2D3748",
-              },
-            }}
-          />
+          <ThemeProvider>
+            {children}
+            <Toaster
+              position="bottom-right"
+              toastOptions={{
+                style: {
+                  background: "var(--surface-2)",
+                  color: "var(--text-1)",
+                  border: "1px solid var(--border-c)",
+                },
+              }}
+            />
+          </ThemeProvider>
         </Providers>
       </body>
     </html>
