@@ -24,7 +24,13 @@ class User(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin):
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     full_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    role: Mapped[UserRole] = mapped_column(Enum(UserRole), default=UserRole.OWNER, nullable=False)
+    role: Mapped[UserRole] = mapped_column(
+        # create_type=False: the 'userrole' enum is created by migration 002,
+        # not by SQLAlchemy at runtime — prevents "type already exists" errors.
+        Enum(UserRole, name="userrole", create_type=False),
+        default=UserRole.OWNER,
+        nullable=False,
+    )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     # MFA
