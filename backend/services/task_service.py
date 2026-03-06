@@ -4,10 +4,10 @@ from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import and_, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models.task import Task, TaskPriority, TaskStatus, TaskCreatedBy
+from models.task import Task, TaskPriority, TaskStatus
 
 
 class TaskService:
@@ -38,8 +38,6 @@ class TaskService:
         return result.scalars().all()
 
     async def get_todays_tasks(self, user_id: UUID) -> list:
-        today = datetime.now(timezone.utc).date()
-        tomorrow = datetime(today.year, today.month, today.day + 1, tzinfo=timezone.utc) if today.day < 28 else None
         q = select(Task).where(
             Task.user_id == user_id,
             Task.deleted_at.is_(None),

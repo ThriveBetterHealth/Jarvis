@@ -1,7 +1,6 @@
 """Notebook service - workspaces, pages, versions."""
 
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import or_, select

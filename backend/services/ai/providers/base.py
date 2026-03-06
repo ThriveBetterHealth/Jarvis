@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import AsyncGenerator, Optional
+from typing import AsyncGenerator
 
 
 @dataclass

@@ -1,6 +1,5 @@
 """Conversation service."""
 
-import uuid
 from typing import Optional
 from uuid import UUID
 

@@ -1,7 +1,5 @@
 """Authentication routes."""
 
-import hashlib
-from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Request, status
@@ -17,11 +15,10 @@ from core.security import (
     generate_qr_code_base64,
     generate_totp_secret,
     get_totp_uri,
-    hash_password,
     verify_password,
     verify_totp,
 )
-from models.user import User, UserRole
+from models.user import User
 from services.audit_service import AuditService
 from services.user_service import UserService
 

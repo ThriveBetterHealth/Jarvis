@@ -4,13 +4,12 @@ import os
 import base64
 import secrets
 from datetime import datetime, timedelta, timezone
-from typing import Optional
 
 import pyotp
 import qrcode
 import io
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-from jose import JWTError, jwt
+from jose import jwt
 from passlib.context import CryptContext
 
 from core.config import settings

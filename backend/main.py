@@ -25,7 +25,6 @@ from api.routes import (
     tasks,
 )
 from core.config import settings
-from core.database import engine
 from core.events import startup_event, shutdown_event
 
 log = structlog.get_logger()

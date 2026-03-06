@@ -1,6 +1,5 @@
 """AI Memory service using pgvector."""
 
-import json
 from typing import Optional
 from uuid import UUID
 
@@ -122,7 +121,6 @@ class MemoryService:
             await self.db.flush()
 
     async def clear_all(self, user_id: UUID):
-        from datetime import datetime, timezone
         await self.db.execute(
             text("UPDATE memory_vectors SET deleted_at = NOW() WHERE user_id = :uid AND deleted_at IS NULL"),
             {"uid": str(user_id)},

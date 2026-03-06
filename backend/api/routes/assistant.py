@@ -4,7 +4,7 @@ import json
 from typing import AsyncGenerator, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File as FastAPIFile, status
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File as FastAPIFile
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession

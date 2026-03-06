@@ -7,7 +7,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models.reminder import Reminder, ReminderChannel, ReminderTriggerType
+from models.reminder import Reminder
 
 
 class ReminderService:
@@ -68,7 +68,7 @@ class ReminderService:
         now = datetime.now(timezone.utc)
         result = await self.db.execute(
             select(Reminder).where(
-                Reminder.is_acknowledged == False,
+                Reminder.is_acknowledged.is_(False),
                 Reminder.deleted_at.is_(None),
                 Reminder.next_fire_at <= now,
             )

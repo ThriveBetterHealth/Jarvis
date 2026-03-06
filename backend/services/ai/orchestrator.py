@@ -1,11 +1,11 @@
 """AI Orchestration Layer - model routing, prompt construction, streaming."""
 
 import time
-from typing import AsyncGenerator, Optional
+from typing import AsyncGenerator
 
 import structlog
 
-from models.conversation import AIModel, Conversation, Message, MessageRole
+from models.conversation import AIModel, Conversation, MessageRole
 from models.user import User
 from services.ai.providers.anthropic_provider import AnthropicProvider
 from services.ai.providers.base import AIProvider, ChatMessage

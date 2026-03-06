@@ -12,7 +12,7 @@ def _page_to_text(page: Page) -> str:
     parts = [page.title]
     for block in (page.blocks or []):
         if isinstance(block, dict):
-            btype = block.get("type", "")
+            block.get("type", "")  # type consumed implicitly via content parsing
             content = block.get("content", "")
             if isinstance(content, str):
                 parts.append(content)

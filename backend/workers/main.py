@@ -1,7 +1,6 @@
 """ARQ background worker definitions."""
 
 import json
-from typing import Optional
 
 import httpx
 import structlog
@@ -101,8 +100,6 @@ async def research_agent_task(ctx, job_id: str, user_id: str, brief: str, save_t
             # 4. Save to notebook if requested
             if save_to_notebook:
                 from services.notebook_service import NotebookService
-                from sqlalchemy import select as sa_select
-                from models.notebook import Workspace
                 from uuid import UUID
 
                 nb_service = NotebookService(db)
@@ -116,7 +113,6 @@ async def research_agent_task(ctx, job_id: str, user_id: str, brief: str, save_t
                     blocks=[{"type": "markdown", "content": report_markdown}],
                     tags=["research", "ai-generated"],
                 )
-                from uuid import UUID as Uuid
                 job.output_page_id = page.id
 
             job.status = ResearchStatus.COMPLETED

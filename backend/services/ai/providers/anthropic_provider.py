@@ -1,6 +1,5 @@
 """Anthropic Claude provider."""
 
-import io
 from typing import AsyncGenerator
 
 import anthropic

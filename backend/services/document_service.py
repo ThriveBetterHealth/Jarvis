@@ -1,8 +1,6 @@
 """Document intelligence service."""
 
-import io
 import json
-import os
 import time
 from typing import Optional
 from uuid import UUID
@@ -11,9 +9,7 @@ from fastapi import UploadFile
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.config import settings
 from models.document import AnalysisStatus, Document, DocumentAnalysis, DocumentType
-from models.file import File
 from models.user import User
 from services.ai.providers.anthropic_provider import AnthropicProvider
 from services.ai.providers.base import ChatMessage

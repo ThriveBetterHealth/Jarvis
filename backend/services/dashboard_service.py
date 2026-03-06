@@ -1,7 +1,6 @@
 """Dashboard / daily briefing service."""
 
 from datetime import datetime, timezone
-from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -68,7 +67,7 @@ class DashboardService:
             .where(
                 Reminder.user_id == self.user.id,
                 Reminder.deleted_at.is_(None),
-                Reminder.is_acknowledged == False,
+                Reminder.is_acknowledged.is_(False),
                 Reminder.next_fire_at >= now,
             )
             .order_by(Reminder.next_fire_at.asc())

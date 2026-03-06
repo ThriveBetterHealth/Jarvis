@@ -1,11 +1,9 @@
 """User model."""
 
 import enum
-import uuid
-from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Enum, String, Text
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy import Boolean, Enum, String, Text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.database import Base
