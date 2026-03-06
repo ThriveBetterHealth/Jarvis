@@ -1,5 +1,16 @@
 import type { Config } from "tailwindcss";
 
+// Helper that lets Tailwind generate opacity-modifier variants (e.g. bg-electric-blue/20)
+// by exposing the colour as an RGB channel string via a CSS variable.
+function withOpacity(variableName: string) {
+  return ({ opacityValue }: { opacityValue?: string | number }) => {
+    if (opacityValue !== undefined) {
+      return `rgba(var(${variableName}), ${opacityValue})`;
+    }
+    return `rgb(var(${variableName}))`;
+  };
+}
+
 const config: Config = {
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
@@ -10,6 +21,7 @@ const config: Config = {
     extend: {
       colors: {
         // Jarvis brand palette
+        // Static shades (no opacity modifier needed — used for bg/text solid colours)
         navy: {
           DEFAULT: "#0A1628",
           50: "#E8EBF0",
@@ -23,20 +35,21 @@ const config: Config = {
           800: "#040910",
           900: "#020408",
         },
+        // Dynamic colours — defined via CSS RGB variables so /20, /50 etc. work
+        "electric-blue": withOpacity("--color-electric-blue-rgb"),
+        "cyan-accent": withOpacity("--color-cyan-accent-rgb"),
+        "neon-cyan": withOpacity("--color-neon-cyan-rgb"),
+        "slate-body": "#2D3748",
+        "light-grey": "#E2E8F0",
+        // Keep blue/cyan namespace aliases for convenience
         blue: {
-          electric: "#1A73E8",
+          electric: withOpacity("--color-electric-blue-rgb"),
           DEFAULT: "#1A73E8",
         },
         cyan: {
-          accent: "#00BCD4",
-          neon: "#00E5FF",
+          accent: withOpacity("--color-cyan-accent-rgb"),
+          neon: withOpacity("--color-neon-cyan-rgb"),
           DEFAULT: "#00BCD4",
-        },
-        slate: {
-          body: "#2D3748",
-        },
-        light: {
-          grey: "#E2E8F0",
         },
       },
       fontFamily: {
