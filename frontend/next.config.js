@@ -1,12 +1,18 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "standalone",
-  experimental: {
-    serverComponentsExternalPackages: [],
-  },
+
+  // Images: use remotePatterns (domains is deprecated in Next.js 14)
   images: {
-    domains: ["localhost"],
+    remotePatterns: [
+      { protocol: "http", hostname: "localhost" },
+      { protocol: "https", hostname: "jarvisapp.cloud" },
+      { protocol: "https", hostname: "www.jarvisapp.cloud" },
+    ],
   },
+
+  // API rewrites: proxy /api/* to FastAPI backend
+  // Note: In production, Nginx handles this routing — rewrites are only active in dev.
   async rewrites() {
     return [
       {

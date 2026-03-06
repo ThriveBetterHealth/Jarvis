@@ -37,7 +37,8 @@
     "framer-motion": "^11.5.4",
     "react-hook-form": "^7.53.0",
     "@hookform/resolvers": "^3.9.0",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "highlight.js": "^11.10.0"
   },
   "devDependencies": {
     "@types/node": "^20.16.6",

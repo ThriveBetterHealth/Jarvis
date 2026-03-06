@@ -6,6 +6,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { clsx } from "clsx";
 import { api } from "@/lib/api";
+import { useAuthStore } from "@/lib/store/auth";
 import toast from "react-hot-toast";
 
 interface Message {
@@ -24,6 +25,7 @@ export function ChatInterface() {
   const [isListening, setIsListening] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const accessToken = useAuthStore((s) => s.accessToken);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -57,7 +59,7 @@ export function ChatInterface() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("jarvis-token") || ""}`,
+            Authorization: `Bearer ${accessToken || ""}`,
           },
           body: JSON.stringify({
             conversation_id: conversationId,

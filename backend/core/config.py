@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     # App
     APP_ENV: str = "development"
     APP_SECRET_KEY: str
-    APP_DOMAIN: str = "localhost"
+    APP_DOMAIN: str = "jarvisapp.cloud"
 
     # Database
     DATABASE_URL: str
@@ -44,7 +44,7 @@ class Settings(BaseSettings):
     SMTP_PORT: int = 587
     SMTP_USER: str = ""
     SMTP_PASSWORD: str = ""
-    SMTP_FROM_EMAIL: str = "jarvis@localhost"
+    SMTP_FROM_EMAIL: str = "jarvis@jarvisapp.cloud"
     SMTP_FROM_NAME: str = "Jarvis"
 
     # Storage
@@ -56,7 +56,12 @@ class Settings(BaseSettings):
     RATE_LIMIT_AI_PER_MINUTE: int = 20
 
     # CORS
-    CORS_ORIGINS: List[str] = ["http://localhost:3000", "https://localhost:3000"]
+    CORS_ORIGINS: List[str] = [
+        "http://localhost:3000",
+        "https://localhost:3000",
+        "https://jarvisapp.cloud",
+        "https://www.jarvisapp.cloud",
+    ]
 
     # Sentry
     SENTRY_DSN: Optional[str] = None

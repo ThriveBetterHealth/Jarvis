@@ -11,9 +11,9 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./infra/scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql
-    ports:
-      - "5432:5432"
+      - ./infra/scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - jarvis_net
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-jarvis}"]
       interval: 10s
@@ -27,10 +27,10 @@ services:
     command: redis-server --requirepass ${REDIS_PASSWORD}
     volumes:
       - redis_data:/data
-    ports:
-      - "6379:6379"
+    networks:
+      - jarvis_net
     healthcheck:
-      test: ["CMD", "redis-cli", "--pass", "${REDIS_PASSWORD}", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -44,10 +44,9 @@ services:
     env_file:
       - .env
     volumes:
-      - ./backend:/app
       - file_storage:/app/storage
-    ports:
-      - "8000:8000"
+    networks:
+      - jarvis_net
     depends_on:
       postgres:
         condition: service_healthy
@@ -55,7 +54,13 @@ services:
         condition: service_healthy
     command: >
       sh -c "alembic upgrade head &&
-             uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+             uvicorn main:app --host 0.0.0.0 --port 8000 --workers 2"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
 
   worker:
     build:
@@ -66,12 +71,15 @@ services:
     env_file:
       - .env
     volumes:
-      - ./backend:/app
       - file_storage:/app/storage
+    networks:
+      - jarvis_net
     depends_on:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      backend:
         condition: service_healthy
     command: arq workers.main.WorkerSettings
 
@@ -79,21 +87,18 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://jarvisapp.cloud}
+        NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL:-wss://jarvisapp.cloud}
     container_name: jarvis_frontend
     restart: unless-stopped
-    env_file:
-      - .env
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-      - /app/.next
-    ports:
-      - "3000:3000"
+    networks:
+      - jarvis_net
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     environment:
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000}
-      - NEXT_PUBLIC_WS_URL=${NEXT_PUBLIC_WS_URL:-ws://localhost:8000}
+      - NODE_ENV=production
 
   nginx:
     image: nginx:alpine
@@ -107,9 +112,15 @@ services:
       - ./infra/nginx/conf.d:/etc/nginx/conf.d:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
       - nginx_logs:/var/log/nginx
+    networks:
+      - jarvis_net
     depends_on:
       - frontend
       - backend
+
+networks:
+  jarvis_net:
+    driver: bridge
 
 volumes:
   postgres_data:

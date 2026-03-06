@@ -8,7 +8,7 @@ on:
 
 jobs:
   backend-lint-test:
-    name: Backend - Lint & Test
+    name: Backend — Lint & Test
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -47,17 +47,16 @@ jobs:
       - name: Lint with ruff
         run: |
           pip install ruff
-          cd backend
-          ruff check . --ignore E501
+          ruff check backend/ --ignore E501
 
       - name: Run tests
         env:
           DATABASE_URL: postgresql+asyncpg://jarvis:test_password@localhost:5432/jarvis_test
           REDIS_URL: redis://localhost:6379/0
           REDIS_PASSWORD: ""
-          JWT_SECRET_KEY: test-jwt-secret-key-at-least-64-chars-long-for-testing-only
-          APP_SECRET_KEY: test-app-secret-key
-          ENCRYPTION_MASTER_KEY: ${{ secrets.ENCRYPTION_MASTER_KEY || '0000000000000000000000000000000000000000000000000000000000000000' }}
+          APP_SECRET_KEY: test-app-secret-key-for-ci-only-not-production
+          JWT_SECRET_KEY: "0000000000000000000000000000000000000000000000000000000000000001"
+          ENCRYPTION_MASTER_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
           ANTHROPIC_API_KEY: test
           OPENAI_API_KEY: test
           GOOGLE_AI_API_KEY: test
@@ -66,20 +65,27 @@ jobs:
           pytest tests/ -v --cov=. --cov-report=xml || true
 
   frontend-lint:
-    name: Frontend - Lint & Type Check
+    name: Frontend — Lint & Type Check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: Set up Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "npm"
+          # Only cache when package-lock.json is present
+          cache: ${{ hashFiles('frontend/package-lock.json') != '' && 'npm' || '' }}
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
-        run: cd frontend && npm ci
+        run: |
+          cd frontend
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
 
       - name: Lint
         run: cd frontend && npm run lint || true
@@ -94,8 +100,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Build backend image
-        run: docker build -t jarvis-backend:test ./backend
+        run: docker build --no-cache -t jarvis-backend:ci ./backend
 
       - name: Build frontend image
-        run: docker build -t jarvis-frontend:test ./frontend
+        run: docker build --no-cache -t jarvis-frontend:ci ./frontend

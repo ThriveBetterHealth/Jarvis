@@ -16,7 +16,9 @@ depends_on = None
 
 
 def upgrade() -> None:
-    # Enable pgvector extension
+    # Enable required PostgreSQL extensions
+    # pgcrypto provides gen_random_uuid() used as primary key default
+    op.execute("CREATE EXTENSION IF NOT EXISTS pgcrypto")
     op.execute("CREATE EXTENSION IF NOT EXISTS vector")
     op.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm")
 

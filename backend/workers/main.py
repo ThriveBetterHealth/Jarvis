@@ -5,7 +5,7 @@ from typing import Optional
 
 import httpx
 import structlog
-from arq import create_pool
+from arq import create_pool, cron
 from arq.connections import RedisSettings
 
 from core.config import settings
@@ -162,9 +162,9 @@ async def enqueue_research(job_id: str, user_id: str, brief: str, save_to_notebo
 class WorkerSettings:
     functions = [research_agent_task, process_reminders_task]
     redis_settings = REDIS_SETTINGS
+    # cron() fires process_reminders_task every minute (all 60 minutes)
     cron_jobs = [
-        # Fire reminders every minute
-        {"coroutine": process_reminders_task, "minute": {i for i in range(60)}},
+        cron(process_reminders_task, minute=set(range(60))),
     ]
     max_jobs = 10
     job_timeout = 300
