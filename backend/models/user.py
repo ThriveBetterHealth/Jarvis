@@ -25,9 +25,15 @@ class User(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin):
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     full_name: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[UserRole] = mapped_column(
-        # create_type=False: the 'userrole' enum is created by migration 002,
-        # not by SQLAlchemy at runtime — prevents "type already exists" errors.
-        Enum(UserRole, name="userrole", create_type=False),
+        # create_type=False: the 'userrole' enum is created by migration 002.
+        # values_callable: use enum .value ("owner") not .name ("OWNER") so
+        # the string sent to PostgreSQL matches the lowercase enum labels.
+        Enum(
+            UserRole,
+            name="userrole",
+            create_type=False,
+            values_callable=lambda x: [e.value for e in x],
+        ),
         default=UserRole.OWNER,
         nullable=False,
     )
