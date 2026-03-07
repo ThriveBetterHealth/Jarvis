@@ -220,13 +220,16 @@ function UserManagement() {
   const inviteMutation = useMutation({
     mutationFn: async (payload: { email: string; role: string }) =>
       (await api.post("/auth/users/invite", payload)).data,
-    onSuccess: () => {
+    onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ["users"] });
       setInviteEmail("");
       setShowInvite(false);
-      toast.success("Invitation sent");
+      toast.success(
+        `Account created! Temp password: ${data.temp_password}`,
+        { duration: 15000 }
+      );
     },
-    onError: () => toast.error("Failed to send invitation"),
+    onError: (err: any) => toast.error(err?.response?.data?.detail || "Failed to create account"),
   });
 
   const deactivateMutation = useMutation({

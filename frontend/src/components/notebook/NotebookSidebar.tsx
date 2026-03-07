@@ -3,47 +3,62 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { Plus, ChevronRight, ChevronDown, Folder, FileText, Cpu } from "lucide-react";
+import { Plus, ChevronRight, ChevronDown, Folder, FileText } from "lucide-react";
 import { clsx } from "clsx";
 import toast from "react-hot-toast";
 
-export function NotebookSidebar() {
+interface NotebookSidebarProps {
+  selectedPageId: string | null;
+  onSelectPage: (pageId: string, workspaceId: string) => void;
+}
+
+export function NotebookSidebar({ selectedPageId, onSelectPage }: NotebookSidebarProps) {
   const [expandedWs, setExpandedWs] = useState<Set<string>>(new Set());
   const qc = useQueryClient();
 
   const { data: workspacesData } = useQuery({
     queryKey: ["workspaces"],
-    queryFn: async () => {
-      const res = await api.get("/notebook/workspaces");
-      return res.data;
-    },
+    queryFn: async () => (await api.get("/notebook/workspaces")).data,
   });
 
   const createWsMutation = useMutation({
-    mutationFn: () => api.post("/notebook/workspaces", { name: "New Workspace" }),
-    onSuccess: () => {
+    mutationFn: async () => {
+      const name = prompt("Workspace name:") || "New Workspace";
+      return api.post("/notebook/workspaces", { name });
+    },
+    onSuccess: (_, __, ctx) => {
       qc.invalidateQueries({ queryKey: ["workspaces"] });
       toast.success("Workspace created");
     },
+    onError: () => toast.error("Failed to create workspace"),
   });
 
-  const toggleWs = (id: string) => {
+  const toggleWs = (id: string) =>
     setExpandedWs((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
-  };
+
+  const workspaces = workspacesData?.workspaces || [];
 
   return (
-    <div className="flex flex-col h-full border-r border-white/10">
+    <div
+      className="flex flex-col h-full border-r"
+      style={{ background: "var(--surface)", borderColor: "var(--border-c)" }}
+    >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-        <h2 className="font-sora text-sm font-semibold">Notebook</h2>
+      <div
+        className="flex items-center justify-between px-4 py-3 border-b"
+        style={{ borderColor: "var(--border-c)" }}
+      >
+        <h2 className="font-sora text-sm font-semibold" style={{ color: "var(--text-1)" }}>
+          Notebook
+        </h2>
         <button
           onClick={() => createWsMutation.mutate()}
-          className="text-gray-400 hover:text-white transition-colors"
+          className="hover:opacity-70 transition-opacity"
+          style={{ color: "var(--text-2)" }}
           title="New workspace"
         >
           <Plus size={16} />
@@ -52,77 +67,139 @@ export function NotebookSidebar() {
 
       {/* Workspace list */}
       <div className="flex-1 overflow-y-auto py-2">
-        {(workspacesData?.workspaces || []).map((ws: any) => (
-          <WorkspaceItem
-            key={ws.id}
-            workspace={ws}
-            expanded={expandedWs.has(ws.id)}
-            onToggle={() => toggleWs(ws.id)}
-          />
-        ))}
-        {(!workspacesData?.workspaces || workspacesData.workspaces.length === 0) && (
-          <p className="text-xs text-gray-500 px-4 py-2">
-            No workspaces yet. Create one to get started.
-          </p>
+        {workspaces.length === 0 ? (
+          <div className="px-4 py-6 text-center">
+            <p className="text-xs mb-3" style={{ color: "var(--text-2)" }}>
+              No workspaces yet
+            </p>
+            <button
+              onClick={() => createWsMutation.mutate()}
+              className="btn-primary text-xs py-1.5 px-3 flex items-center gap-1 mx-auto"
+            >
+              <Plus size={12} />
+              Create workspace
+            </button>
+          </div>
+        ) : (
+          workspaces.map((ws: any) => (
+            <WorkspaceItem
+              key={ws.id}
+              workspace={ws}
+              expanded={expandedWs.has(ws.id)}
+              onToggle={() => toggleWs(ws.id)}
+              selectedPageId={selectedPageId}
+              onSelectPage={onSelectPage}
+            />
+          ))
         )}
       </div>
     </div>
   );
 }
 
-function WorkspaceItem({ workspace, expanded, onToggle }: any) {
+function WorkspaceItem({
+  workspace,
+  expanded,
+  onToggle,
+  selectedPageId,
+  onSelectPage,
+}: {
+  workspace: any;
+  expanded: boolean;
+  onToggle: () => void;
+  selectedPageId: string | null;
+  onSelectPage: (pageId: string, workspaceId: string) => void;
+}) {
   const qc = useQueryClient();
 
   const { data: pagesData } = useQuery({
     queryKey: ["pages", workspace.id],
-    queryFn: async () => {
-      const res = await api.get(`/notebook/pages?workspace_id=${workspace.id}`);
-      return res.data;
-    },
+    queryFn: async () => (await api.get(`/notebook/pages?workspace_id=${workspace.id}`)).data,
     enabled: expanded,
   });
 
   const createPageMutation = useMutation({
-    mutationFn: () =>
-      api.post("/notebook/pages", {
+    mutationFn: async () => {
+      const res = await api.post("/notebook/pages", {
         workspace_id: workspace.id,
         title: "Untitled",
         blocks: [],
-      }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["pages", workspace.id] }),
+      });
+      return res.data;
+    },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["pages", workspace.id] });
+      // Auto-open the new page
+      if (data?.id) onSelectPage(data.id, workspace.id);
+      if (!expanded) onToggle();
+    },
+    onError: () => toast.error("Failed to create page"),
   });
 
   return (
     <div>
-      <div className="flex items-center gap-1 px-2 py-1 group hover:bg-white/5 rounded-lg mx-2">
-        <button onClick={onToggle} className="p-0.5 text-gray-500 hover:text-white">
+      {/* Workspace row */}
+      <div
+        className="flex items-center gap-1 px-2 py-1.5 group rounded-lg mx-2 cursor-pointer hover:opacity-80 transition-opacity"
+        onClick={onToggle}
+      >
+        <span style={{ color: "var(--text-2)" }}>
           {expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-        </button>
+        </span>
         <Folder size={14} className="text-electric-blue flex-shrink-0" />
-        <span className="text-sm text-gray-300 flex-1 truncate">{workspace.name}</span>
+        <span className="text-sm flex-1 truncate" style={{ color: "var(--text-1)" }}>
+          {workspace.name}
+        </span>
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            createPageMutation.mutate();
-            onToggle();
-          }}
-          className="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-white transition-all"
+          onClick={(e) => { e.stopPropagation(); createPageMutation.mutate(); }}
+          className="opacity-0 group-hover:opacity-100 transition-all hover:opacity-70 p-0.5"
+          style={{ color: "var(--text-2)" }}
+          title="New page"
         >
           <Plus size={12} />
         </button>
       </div>
 
+      {/* Pages */}
       {expanded && (
-        <div className="ml-6">
-          {(pagesData?.pages || []).map((page: any) => (
-            <div
-              key={page.id}
-              className="flex items-center gap-2 px-2 py-1 rounded-lg mx-1 hover:bg-white/5 cursor-pointer"
+        <div className="ml-5 mb-1">
+          {(pagesData?.pages || []).length === 0 ? (
+            <button
+              onClick={() => createPageMutation.mutate()}
+              className="flex items-center gap-1.5 px-2 py-1 text-xs w-full rounded hover:opacity-70 transition-opacity"
+              style={{ color: "var(--text-2)" }}
             >
-              <FileText size={13} className="text-gray-500 flex-shrink-0" />
-              <span className="text-sm text-gray-400 truncate">{page.title || "Untitled"}</span>
-            </div>
-          ))}
+              <Plus size={11} />
+              New page
+            </button>
+          ) : (
+            (pagesData?.pages || []).map((page: any) => (
+              <button
+                key={page.id}
+                onClick={() => onSelectPage(page.id, workspace.id)}
+                className={clsx(
+                  "flex items-center gap-2 px-2 py-1.5 rounded-lg mx-1 w-full text-left transition-all",
+                  selectedPageId === page.id
+                    ? "bg-electric-blue/15 text-electric-blue"
+                    : "hover:opacity-80"
+                )}
+                style={{ color: selectedPageId === page.id ? undefined : "var(--text-2)" }}
+              >
+                <FileText size={13} className="flex-shrink-0" />
+                <span className="text-xs truncate">{page.title || "Untitled"}</span>
+              </button>
+            ))
+          )}
+          {(pagesData?.pages || []).length > 0 && (
+            <button
+              onClick={() => createPageMutation.mutate()}
+              className="flex items-center gap-1.5 px-2 py-1 text-xs w-full rounded hover:opacity-70 transition-opacity mt-0.5"
+              style={{ color: "var(--text-2)" }}
+            >
+              <Plus size={11} />
+              New page
+            </button>
+          )}
         </div>
       )}
     </div>

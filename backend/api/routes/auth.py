@@ -187,8 +187,131 @@ async def get_me(current_user: User = Depends(get_current_user)):
         "id": str(current_user.id),
         "email": current_user.email,
         "full_name": current_user.full_name,
-        "role": current_user.role,
+        "role": current_user.role.value if hasattr(current_user.role, "value") else current_user.role,
         "mfa_enabled": current_user.mfa_enabled,
         "preferences": current_user.preferences,
         "created_at": current_user.created_at,
     }
+
+
+class UpdateMeRequest(BaseModel):
+    full_name: Optional[str] = None
+
+
+@router.patch("/me")
+async def update_me(
+    body: UpdateMeRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Update current user's profile (name only — email/role locked)."""
+    if body.full_name is not None:
+        current_user.full_name = body.full_name.strip()
+        await db.flush()
+        await db.commit()
+    return {
+        "id": str(current_user.id),
+        "email": current_user.email,
+        "full_name": current_user.full_name,
+        "role": current_user.role.value if hasattr(current_user.role, "value") else current_user.role,
+        "mfa_enabled": current_user.mfa_enabled,
+    }
+
+
+# ── User management (owner only) ────────────────────────────────────────────
+
+def _require_owner(current_user: User = Depends(get_current_user)) -> User:
+    role = current_user.role.value if hasattr(current_user.role, "value") else current_user.role
+    if role != "owner":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Owner access required")
+    return current_user
+
+
+@router.get("/users")
+async def list_users(
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(_require_owner),
+):
+    """List all users (owner only)."""
+    service = UserService(db)
+    users = await service.list_all()
+    return [
+        {
+            "id": str(u.id),
+            "email": u.email,
+            "full_name": u.full_name,
+            "role": u.role.value if hasattr(u.role, "value") else u.role,
+            "is_active": u.is_active,
+            "created_at": u.created_at,
+        }
+        for u in users
+    ]
+
+
+class InviteUserRequest(BaseModel):
+    email: EmailStr
+    role: str = "user"
+    full_name: Optional[str] = None
+
+
+@router.post("/users/invite", status_code=status.HTTP_201_CREATED)
+async def invite_user(
+    body: InviteUserRequest,
+    db: AsyncSession = Depends(get_db),
+    owner: User = Depends(_require_owner),
+):
+    """Create a new user account (owner only). Returns a temporary password."""
+    import secrets
+    from core.security import hash_password
+    from models.user import UserRole
+
+    service = UserService(db)
+    existing = await service.get_by_email(body.email)
+    if existing:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
+
+    try:
+        role_enum = UserRole(body.role)
+    except ValueError:
+        role_enum = UserRole.USER
+
+    temp_password = secrets.token_urlsafe(12)
+    new_user = User(
+        email=body.email.lower(),
+        full_name=body.full_name or body.email.split("@")[0],
+        password_hash=hash_password(temp_password),
+        role=role_enum,
+        is_active=True,
+    )
+    db.add(new_user)
+    await db.flush()
+    await db.commit()
+
+    return {
+        "id": str(new_user.id),
+        "email": new_user.email,
+        "full_name": new_user.full_name,
+        "role": new_user.role.value if hasattr(new_user.role, "value") else new_user.role,
+        "temp_password": temp_password,
+        "message": f"Account created. Share this temporary password with the user: {temp_password}",
+    }
+
+
+@router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def deactivate_user(
+    user_id: str,
+    db: AsyncSession = Depends(get_db),
+    owner: User = Depends(_require_owner),
+):
+    """Deactivate a user account (owner only). Cannot deactivate yourself."""
+    from uuid import UUID as Uuid
+    service = UserService(db)
+    target = await service.get_by_id(Uuid(user_id))
+    if not target:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    if target.id == owner.id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot deactivate your own account")
+    target.is_active = False
+    target.soft_delete()
+    await db.flush()
+    await db.commit()

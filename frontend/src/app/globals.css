@@ -76,7 +76,7 @@ html.light {
     color: var(--text-2);
   }
   .nav-item:hover { color: var(--text-1); background: var(--border-c); }
-  .nav-item.active { @apply bg-electric-blue/20 text-electric-blue; }
+  .nav-item.active { background: rgba(26,115,232,0.15); color: #1A73E8; }
 
   /* ── Card ─────────────────────────────────────────── */
   .card {
