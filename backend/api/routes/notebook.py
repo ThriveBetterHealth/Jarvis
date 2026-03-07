@@ -16,6 +16,50 @@ from services.ai.notebook_ai import NotebookAIService
 router = APIRouter()
 
 
+# ─── Serialisers ─────────────────────────────────────────────────────────────
+
+def _ws(ws) -> dict:
+    return {
+        "id": str(ws.id),
+        "name": ws.name,
+        "description": ws.description,
+        "icon": ws.icon,
+        "sort_order": ws.sort_order,
+        "created_at": ws.created_at.isoformat() if ws.created_at else None,
+        "updated_at": ws.updated_at.isoformat() if ws.updated_at else None,
+    }
+
+
+def _page(p) -> dict:
+    return {
+        "id": str(p.id),
+        "workspace_id": str(p.workspace_id),
+        "parent_id": str(p.parent_id) if p.parent_id else None,
+        "title": p.title,
+        "blocks": p.blocks or [],
+        "tags": p.tags or [],
+        "icon": p.icon,
+        "word_count": p.word_count,
+        "current_version": p.current_version,
+        "is_published": p.is_published,
+        "created_at": p.created_at.isoformat() if p.created_at else None,
+        "updated_at": p.updated_at.isoformat() if p.updated_at else None,
+    }
+
+
+def _version(v) -> dict:
+    return {
+        "id": str(v.id),
+        "page_id": str(v.page_id),
+        "version_number": v.version_number,
+        "title": v.title,
+        "blocks": v.blocks or [],
+        "created_at": v.created_at.isoformat() if v.created_at else None,
+    }
+
+
+# ─── Request models ───────────────────────────────────────────────────────────
+
 class CreateWorkspaceRequest(BaseModel):
     name: str
     description: Optional[str] = None
@@ -46,10 +90,10 @@ async def list_workspaces(
 ):
     service = NotebookService(db)
     workspaces = await service.list_workspaces(current_user.id)
-    return {"workspaces": workspaces}
+    return {"workspaces": [_ws(w) for w in workspaces]}
 
 
-@router.post("/workspaces")
+@router.post("/workspaces", status_code=201)
 async def create_workspace(
     body: CreateWorkspaceRequest,
     current_user: User = Depends(get_current_user),
@@ -62,7 +106,7 @@ async def create_workspace(
         description=body.description,
         icon=body.icon,
     )
-    return workspace
+    return _ws(workspace)
 
 
 @router.delete("/workspaces/{workspace_id}", status_code=204)
@@ -86,10 +130,10 @@ async def list_pages(
 ):
     service = NotebookService(db)
     pages = await service.list_pages(current_user.id, workspace_id=workspace_id, parent_id=parent_id)
-    return {"pages": pages}
+    return {"pages": [_page(p) for p in pages]}
 
 
-@router.post("/pages")
+@router.post("/pages", status_code=201)
 async def create_page(
     body: CreatePageRequest,
     current_user: User = Depends(get_current_user),
@@ -104,7 +148,7 @@ async def create_page(
         blocks=body.blocks,
         tags=body.tags,
     )
-    return page
+    return _page(page)
 
 
 @router.get("/pages/{page_id}")
@@ -117,7 +161,7 @@ async def get_page(
     page = await service.get_page(page_id, current_user.id)
     if not page:
         raise HTTPException(status_code=404, detail="Page not found")
-    return page
+    return _page(page)
 
 
 @router.patch("/pages/{page_id}")
@@ -138,7 +182,7 @@ async def update_page(
     )
     if not page:
         raise HTTPException(status_code=404, detail="Page not found")
-    return page
+    return _page(page)
 
 
 @router.delete("/pages/{page_id}", status_code=204)
@@ -159,7 +203,7 @@ async def get_page_versions(
 ):
     service = NotebookService(db)
     versions = await service.get_versions(page_id, current_user.id)
-    return {"versions": versions}
+    return {"versions": [_version(v) for v in versions]}
 
 
 # ─── Search ──────────────────────────────────────────────────────────────────
@@ -172,7 +216,7 @@ async def search_pages(
 ):
     service = NotebookService(db)
     results = await service.search(current_user.id, q)
-    return {"results": results}
+    return {"results": [_page(p) for p in results]}
 
 
 # ─── AI Functions ────────────────────────────────────────────────────────────

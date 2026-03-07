@@ -17,6 +17,27 @@ from services.task_service import TaskService
 router = APIRouter()
 
 
+# ─── Serialiser ───────────────────────────────────────────────────────────────
+
+def _task(t) -> dict:
+    return {
+        "id": str(t.id),
+        "title": t.title,
+        "description": t.description,
+        "priority": t.priority.value if hasattr(t.priority, "value") else t.priority,
+        "status": t.status.value if hasattr(t.status, "value") else t.status,
+        "due_date": t.due_date.isoformat() if t.due_date else None,
+        "completed_at": t.completed_at.isoformat() if t.completed_at else None,
+        "tags": t.tags or [],
+        "recurrence": t.recurrence,
+        "linked_page_id": str(t.linked_page_id) if t.linked_page_id else None,
+        "created_at": t.created_at.isoformat() if t.created_at else None,
+        "updated_at": t.updated_at.isoformat() if t.updated_at else None,
+    }
+
+
+# ─── Request models ───────────────────────────────────────────────────────────
+
 class CreateTaskRequest(BaseModel):
     title: str
     description: Optional[str] = None
@@ -39,6 +60,8 @@ class UpdateTaskRequest(BaseModel):
     recurrence: Optional[dict] = None
 
 
+# ─── Routes ───────────────────────────────────────────────────────────────────
+
 @router.get("")
 async def list_tasks(
     status: Optional[TaskStatus] = Query(None),
@@ -60,10 +83,10 @@ async def list_tasks(
         skip=skip,
         limit=limit,
     )
-    return {"tasks": tasks, "total": len(tasks)}
+    return {"tasks": [_task(t) for t in tasks], "total": len(tasks)}
 
 
-@router.post("")
+@router.post("", status_code=201)
 async def create_task(
     body: CreateTaskRequest,
     current_user: User = Depends(get_current_user),
@@ -74,7 +97,7 @@ async def create_task(
         user_id=current_user.id,
         **body.model_dump(),
     )
-    return task
+    return _task(task)
 
 
 @router.get("/today")
@@ -84,7 +107,7 @@ async def get_todays_tasks(
 ):
     service = TaskService(db)
     tasks = await service.get_todays_tasks(current_user.id)
-    return {"tasks": tasks}
+    return {"tasks": [_task(t) for t in tasks]}
 
 
 @router.get("/{task_id}")
@@ -97,7 +120,7 @@ async def get_task(
     task = await service.get_task(task_id, current_user.id)
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
-    return task
+    return _task(task)
 
 
 @router.patch("/{task_id}")
@@ -115,7 +138,7 @@ async def update_task(
     )
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
-    return task
+    return _task(task)
 
 
 @router.post("/{task_id}/complete")
@@ -128,7 +151,7 @@ async def complete_task(
     task = await service.complete_task(task_id, current_user.id)
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
-    return task
+    return _task(task)
 
 
 @router.delete("/{task_id}", status_code=204)

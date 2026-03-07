@@ -1,7 +1,9 @@
 import axios from "axios";
 import { useAuthStore } from "./store/auth";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+// Empty string = relative URL → Nginx proxies /api/* to the backend in production
+// Set NEXT_PUBLIC_API_URL only when talking to a different host (e.g. local dev)
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 export const api = axios.create({
   baseURL: `${BASE_URL}/api`,
