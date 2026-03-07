@@ -100,7 +100,7 @@ export function NotificationsRail({ open, onClose }: Props) {
         <div className="flex-1 overflow-y-auto py-2">
           {SAMPLE.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full gap-2 text-center px-6">
-              <Bell size={32} className="text-gray-600" />
+              <Bell size={32} className="opacity-30" style={{ color: "var(--text-2)" }} />
               <p className="text-sm" style={{ color: "var(--text-2)" }}>No notifications yet</p>
             </div>
           ) : (
@@ -108,9 +108,11 @@ export function NotificationsRail({ open, onClose }: Props) {
               <div
                 key={n.id}
                 className={clsx(
-                  "flex gap-3 px-4 py-3 hover:bg-white/5 cursor-pointer transition-colors",
+                  "flex gap-3 px-4 py-3 cursor-pointer transition-colors",
                   !n.read && "border-l-2 border-electric-blue"
                 )}
+                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "var(--surface-2)")}
+                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = "transparent")}
               >
                 <div className="mt-0.5 flex-shrink-0">{ICON_MAP[n.type]}</div>
                 <div className="flex-1 min-w-0">

@@ -60,7 +60,7 @@ export function ProfileMenu() {
             : initials
           }
         </div>
-        <ChevronDown size={12} className="text-gray-400" />
+        <ChevronDown size={12} style={{ color: "var(--text-3)" }} />
       </button>
 
       {/* Dropdown */}
@@ -83,7 +83,9 @@ export function ProfileMenu() {
           {/* Theme toggle */}
           <button
             onClick={() => { toggleTheme(); setDropdownOpen(false); }}
-            className="w-full flex items-center gap-2.5 px-3 py-2 text-sm transition-colors hover:bg-white/5"
+            className="w-full flex items-center gap-2.5 px-3 py-2 text-sm transition-colors"
+          onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "var(--surface-2)")}
+          onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = "transparent")}
             style={{ color: "var(--text-2)" }}
           >
             {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
@@ -110,9 +112,11 @@ function MenuItem({ icon, label, onClick, className }: {
     <button
       onClick={onClick}
       className={clsx(
-        "w-full flex items-center gap-2.5 px-3 py-2 text-sm transition-colors hover:bg-white/5",
+        "w-full flex items-center gap-2.5 px-3 py-2 text-sm transition-colors",
         className
       )}
+      onMouseEnter={(e) => { if (!className) (e.currentTarget as HTMLElement).style.background = "var(--surface-2)"; }}
+      onMouseLeave={(e) => { if (!className) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
       style={{ color: className ? undefined : "var(--text-2)" }}
     >
       {icon}

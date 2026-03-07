@@ -52,7 +52,7 @@ export function SettingsView() {
             <FieldRow
               label="Multi-Factor Authentication"
               value={user?.mfa_enabled ? "Enabled" : "Disabled"}
-              valueClass={user?.mfa_enabled ? "text-green-400" : "text-gray-500"}
+              valueClass={user?.mfa_enabled ? "text-green-400" : undefined}
               action={
                 <button className="btn-secondary text-xs py-1">
                   {user?.mfa_enabled ? "Disable MFA" : "Enable MFA"}
@@ -134,14 +134,12 @@ function AppearanceSection() {
             <button
               key={opt.value}
               onClick={() => setTheme(opt.value)}
-              className={`
-                flex-1 flex flex-col items-center gap-2 py-4 rounded-xl border transition-all
-                ${active
-                  ? "border-electric-blue bg-electric-blue/10 text-electric-blue"
-                  : "border-white/10 hover:border-white/20"
-                }
-              `}
-              style={{ color: active ? undefined : "var(--text-2)" }}
+              className="flex-1 flex flex-col items-center gap-2 py-4 rounded-xl border transition-all"
+              style={{
+                borderColor: active ? "#1A73E8" : "var(--border-c)",
+                background: active ? "rgba(26,115,232,0.10)" : "var(--surface-2)",
+                color: active ? "#1A73E8" : "var(--text-2)",
+              }}
             >
               {opt.icon}
               <span className="text-sm font-medium">{opt.label}</span>
@@ -189,14 +187,14 @@ function NotificationsSection() {
             role="switch"
             aria-checked={prefs[key]}
             onClick={() => toggle(key)}
-            className={`w-9 h-5 rounded-full relative transition-colors flex-shrink-0 ${
-              prefs[key] ? "bg-electric-blue" : "bg-white/10"
-            }`}
+            className="w-9 h-5 rounded-full relative transition-colors flex-shrink-0"
+            style={{ background: prefs[key] ? "#1A73E8" : "var(--surface-3)" }}
           >
             <span
-              className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${
+              className={`absolute top-0.5 w-4 h-4 rounded-full shadow transition-transform ${
                 prefs[key] ? "translate-x-4" : "translate-x-0.5"
               }`}
+              style={{ background: "var(--text-1)" }}
             />
           </button>
         </label>
@@ -271,7 +269,7 @@ function UserManagement() {
               Email address
             </label>
             <div className="relative">
-              <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+              <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--text-3)" }} />
               <input
                 className="input-base w-full pl-9"
                 type="email"

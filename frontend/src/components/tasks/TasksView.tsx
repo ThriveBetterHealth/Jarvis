@@ -14,7 +14,7 @@ const PRIORITY_BADGE: Record<string, string> = {
   critical: "bg-red-400/20 text-red-400",
   high:     "bg-orange-400/20 text-orange-400",
   medium:   "bg-yellow-400/20 text-yellow-400",
-  low:      "bg-gray-400/20 text-gray-400",
+  low:      "bg-blue-400/20 text-blue-400",
 };
 
 export function TasksView() {

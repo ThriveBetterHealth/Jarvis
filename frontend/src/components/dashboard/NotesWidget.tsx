@@ -12,11 +12,16 @@ export function DashboardNotesWidget({ data, isLoading }: { data?: any; isLoadin
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <BookOpen size={15} className="text-electric-blue" />
-          <h3 className="font-sora font-semibold text-sm">Recent Notes</h3>
+          <h3 className="font-sora font-semibold text-sm" style={{ color: "var(--text-1)" }}>
+            Recent Notes
+          </h3>
         </div>
         <button
           onClick={() => router.push("/notebook")}
-          className="text-xs text-gray-400 hover:text-white flex items-center gap-1 transition-colors"
+          className="flex items-center gap-1 transition-colors"
+          style={{ color: "var(--text-2)" }}
+          onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-1)")}
+          onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-2)")}
         >
           <ArrowRight size={12} />
         </button>
@@ -32,17 +37,21 @@ export function DashboardNotesWidget({ data, isLoading }: { data?: any; isLoadin
             <button
               key={page.id}
               onClick={() => router.push(`/notebook?page=${page.id}`)}
-              className="w-full text-left px-2 py-1.5 rounded hover:bg-white/5 transition-colors"
+              className="w-full text-left px-2 py-1.5 rounded-lg transition-colors"
+              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "var(--surface-2)")}
+              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = "transparent")}
             >
-              <p className="text-sm text-gray-200 truncate">{page.title}</p>
-              <p className="text-xs text-gray-500">
+              <p className="text-sm truncate" style={{ color: "var(--text-1)" }}>{page.title}</p>
+              <p className="text-xs" style={{ color: "var(--text-3)" }}>
                 {formatDistanceToNow(new Date(page.updated_at), { addSuffix: true })}
               </p>
             </button>
           ))}
         </div>
       ) : (
-        <p className="text-xs text-gray-500 text-center py-4">No recent notes</p>
+        <p className="text-xs text-center py-4" style={{ color: "var(--text-3)" }}>
+          No recent notes
+        </p>
       )}
     </div>
   );

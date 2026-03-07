@@ -21,7 +21,7 @@ export function AIInsightsPanel({ insights, isLoading }: AIInsightsPanelProps) {
           <div className="skeleton h-4 w-4/6" />
         </div>
       ) : (
-        <p className="text-sm text-gray-300 leading-relaxed">
+        <p className="text-sm leading-relaxed" style={{ color: "var(--text-2)" }}>
           {insights || "No briefing available yet. Complete some tasks and add notes to get started."}
         </p>
       )}

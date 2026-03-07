@@ -18,7 +18,12 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: "jarvis-auth",
-      partialize: (state) => ({ refreshToken: state.refreshToken }),
+      // Persist BOTH tokens — accessToken must survive page refresh
+      // otherwise every reload causes "Not authenticated" errors
+      partialize: (state) => ({
+        accessToken: state.accessToken,
+        refreshToken: state.refreshToken,
+      }),
     }
   )
 );

@@ -114,6 +114,16 @@ export function AppLayout({ children, rightPanel, leftPanelOverride }: AppLayout
           </div>
         </aside>
 
+        {/* Left panel override (e.g. Notebook sidebar) */}
+        {leftPanelOverride && (
+          <div
+            className="w-64 flex-shrink-0 h-full overflow-hidden border-r"
+            style={{ borderColor: "var(--border-c)" }}
+          >
+            {leftPanelOverride}
+          </div>
+        )}
+
         {/* Top bar + main content */}
         <div className="flex flex-col flex-1 min-w-0">
           {/* Top bar */}
